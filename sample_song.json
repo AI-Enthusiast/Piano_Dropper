@@ -1,0 +1,57 @@
+[
+  {
+    "name": "C4",
+    "duration": 0.5,
+    "velocity": 0.8
+  },
+  {
+    "name": "D4",
+    "duration": 0.5,
+    "velocity": 0.8
+  },
+  {
+    "name": "E4",
+    "duration": 0.5,
+    "velocity": 0.8
+  },
+  {
+    "name": "F4",
+    "duration": 0.5,
+    "velocity": 0.8
+  },
+  {
+    "name": "G4",
+    "duration": 0.5,
+    "velocity": 0.9
+  },
+  {
+    "name": "G4",
+    "duration": 0.5,
+    "velocity": 0.9
+  },
+  {
+    "name": "A4",
+    "duration": 0.25,
+    "velocity": 0.85
+  },
+  {
+    "name": "A4",
+    "duration": 0.25,
+    "velocity": 0.85
+  },
+  {
+    "name": "A4",
+    "duration": 0.25,
+    "velocity": 0.85
+  },
+  {
+    "name": "A4",
+    "duration": 0.25,
+    "velocity": 0.85
+  },
+  {
+    "name": "G4",
+    "duration": 1.0,
+    "velocity": 0.9
+  }
+]
