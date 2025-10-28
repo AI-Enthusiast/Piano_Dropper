@@ -20,7 +20,7 @@ class Note:
 
 
 class Piano:
-    """Piano class that maps notes to frequencies and generates sound."""
+    """Piano class that maps notes to frequencies and generates  sound."""
 
     def __init__(self, sample_rate: int = 44100):
         self.sample_rate = sample_rate
@@ -349,14 +349,65 @@ def main():
     print("1. Play audio through speakers")
     print("2. Save to WAV file")
     print("3. Both")
+    print("4. Play a custom JSON file")
 
     try:
-        choice = input("Enter choice (1/2/3): ").strip()
+        choice = input("Enter choice (1/2/3/4): ").strip()
     except (EOFError, KeyboardInterrupt):
         choice = "3"  # Default to both if running non-interactively
         print("3")
 
-    if choice in ['1', '3']:
+    if choice == '4':
+        # Play a custom JSON file
+        try:
+            custom_file = input("Enter the path to your JSON file: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            custom_file = "sample_song.json"
+            print("sample_song.json")
+
+        try:
+            print(f"\nLoading {custom_file}...")
+            custom_notes = piano.parse_sheet_music(custom_file)
+            print(f"Loaded {len(custom_notes)} notes")
+
+            print("\nGenerating audio...")
+            custom_audio = piano.play_song(custom_notes, send_to_visualizer=False)
+
+            print("\nWhat would you like to do with this audio?")
+            print("1. Play through speakers")
+            print("2. Save to WAV file")
+            print("3. Both")
+
+            try:
+                sub_choice = input("Enter choice (1/2/3): ").strip()
+            except (EOFError, KeyboardInterrupt):
+                sub_choice = "3"
+                print("3")
+
+            if sub_choice in ['1', '3']:
+                piano.play_audio_realtime(custom_audio)
+
+            if sub_choice in ['2', '3']:
+                try:
+                    output_name = input("Enter output filename (default: output_song.wav): ").strip()
+                except (EOFError, KeyboardInterrupt):
+                    output_name = ""
+                    print("")
+
+                if not output_name:
+                    output_name = "output_song.wav"
+
+                print(f"\nSaving audio file to {output_name}...")
+                piano.save_audio(custom_audio, output_name)
+
+        except FileNotFoundError:
+            print(f"Error: File '{custom_file}' not found.")
+        except json.JSONDecodeError:
+            print(f"Error: File '{custom_file}' is not valid JSON.")
+        except Exception as e:
+            print(f"Error: {e}")
+
+    elif choice in ['1', '3']:
         piano.play_audio_realtime(audio_wave)
 
     if choice in ['2', '3']:
@@ -364,7 +415,7 @@ def main():
         piano.save_audio(audio_wave, "output_song.wav")
 
     print("\nDone!")
-    if choice not in ['1', '2', '3']:
+    if choice not in ['1', '2', '3', '4']:
         print("Invalid choice. No action taken.")
 
 
