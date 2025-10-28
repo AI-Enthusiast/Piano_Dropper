@@ -6,7 +6,7 @@ Plays music while showing synchronized water drop physics visualization.
 import threading
 import time
 from piano import Piano, Note
-from visualizer import PianoWaterVisualizer
+from visualizer_3d import PianoWaterVisualizer3D
 
 
 def run_piano_with_visualizer(song_file: str = "sample_song.json"):
@@ -19,7 +19,7 @@ def run_piano_with_visualizer(song_file: str = "sample_song.json"):
     piano = Piano()
 
     print("Initializing visualizer...")
-    visualizer = PianoWaterVisualizer(width=1200, height=800)
+    visualizer = PianoWaterVisualizer3D(width=1200, height=800)
 
     # Parse the song
     print(f"\nLoading song from {song_file}...")
@@ -109,7 +109,7 @@ def demo_mode():
     print("\nRunning continuous demo with random notes...")
     print("Press ESC in the visualizer window to stop\n")
 
-    visualizer = PianoWaterVisualizer(width=1200, height=800)
+    visualizer = PianoWaterVisualizer3D(width=1200, height=800)
     piano = Piano()
 
     # Generate random notes

@@ -2,4 +2,6 @@ numpy>=1.24.0
 scipy>=1.10.0
 pyaudio>=0.2.11
 pygame>=2.5.0
+PyOpenGL>=3.1.0
+PyOpenGL-accelerate>=3.1.0
 
