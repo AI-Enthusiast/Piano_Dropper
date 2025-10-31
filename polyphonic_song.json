@@ -1,0 +1,73 @@
+[
+  {
+    "name": ["C4", "E4", "G4"],
+    "duration": 1.0,
+    "velocity": 0.8,
+    "timestamp": 0.0,
+    "comment": "C major chord"
+  },
+  {
+    "name": ["F4", "A4", "C5"],
+    "duration": 1.0,
+    "velocity": 0.8,
+    "timestamp": 1.0,
+    "comment": "F major chord"
+  },
+  {
+    "name": ["G4", "B4", "D5"],
+    "duration": 1.0,
+    "velocity": 0.8,
+    "timestamp": 2.0,
+    "comment": "G major chord"
+  },
+  {
+    "name": ["C4", "E4", "G4"],
+    "duration": 1.5,
+    "velocity": 0.9,
+    "timestamp": 3.0,
+    "comment": "C major chord - final"
+  },
+  {
+    "name": "E5",
+    "duration": 0.3,
+    "velocity": 0.7,
+    "timestamp": 0.5,
+    "comment": "Melody note over first chord"
+  },
+  {
+    "name": "D5",
+    "duration": 0.3,
+    "velocity": 0.7,
+    "timestamp": 0.8,
+    "comment": "Melody continues"
+  },
+  {
+    "name": "C5",
+    "duration": 0.3,
+    "velocity": 0.7,
+    "timestamp": 1.5,
+    "comment": "Melody over second chord"
+  },
+  {
+    "name": "A4",
+    "duration": 0.3,
+    "velocity": 0.7,
+    "timestamp": 1.8,
+    "comment": "Melody continues"
+  },
+  {
+    "name": "B4",
+    "duration": 0.3,
+    "velocity": 0.7,
+    "timestamp": 2.5,
+    "comment": "Melody over third chord"
+  },
+  {
+    "name": "C5",
+    "duration": 0.5,
+    "velocity": 0.8,
+    "timestamp": 2.8,
+    "comment": "Melody resolves"
+  }
+]
+

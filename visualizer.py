@@ -34,7 +34,20 @@ class WaterDrop:
 
     def update(self, dt: float, gravity: float = 980.0):
         """Update droplet position and velocity."""
-        self.vy += gravity * dt  # Apply gravity
+        # Apply gravity
+        self.vy += gravity * dt
+
+        # Apply air resistance (drag force proportional to velocity squared)
+        air_resistance = 0.001
+        speed = math.sqrt(self.vx**2 + self.vy**2)
+        if speed > 0:
+            drag_force = air_resistance * speed * speed
+            drag_x = -drag_force * (self.vx / speed) * dt
+            drag_y = -drag_force * (self.vy / speed) * dt
+            self.vx += drag_x
+            self.vy += drag_y
+
+        # Update position
         self.x += self.vx * dt
         self.y += self.vy * dt
         self.lifetime += dt
@@ -59,9 +72,12 @@ class Ripple:
     def update(self, dt: float):
         """Update ripple expansion."""
         self.lifetime += dt
-        progress = self.lifetime / self.max_lifetime
-        self.radius = self.max_radius * progress
-        self.alpha = int(255 * (1 - progress))
+        if self.lifetime > 0:  # Only expand if lifetime is positive (handle delayed ripples)
+            progress = self.lifetime / self.max_lifetime
+            self.radius = self.max_radius * progress
+            self.alpha = int(255 * (1 - progress))
+        else:
+            self.alpha = 0  # Hidden until delay expires
 
     def is_alive(self) -> bool:
         """Check if ripple should still exist."""
@@ -79,17 +95,34 @@ class Splash:
     color: Tuple[int, int, int]
     lifetime: float
     max_lifetime: float
+    rotation: float = 0.0
+    rotation_speed: float = 0.0
 
     def update(self, dt: float, gravity: float = 980.0):
         """Update splash particle."""
+        # Apply gravity
         self.vy += gravity * dt
+
+        # Apply air resistance
+        air_resistance = 0.01
+        self.vx *= (1 - air_resistance * dt)
+        self.vy *= (1 - air_resistance * dt)
+
+        # Update position
         self.x += self.vx * dt
         self.y += self.vy * dt
+
+        # Update rotation
+        self.rotation += self.rotation_speed * dt
+
+        # Shrink over time
+        self.size *= (1 - 0.5 * dt)
+
         self.lifetime += dt
 
     def is_alive(self) -> bool:
         """Check if splash particle should still exist."""
-        return self.lifetime < self.max_lifetime and self.y < 800
+        return self.lifetime < self.max_lifetime and self.y < 800 and self.size > 0.5
 
 
 class WaterPool:
@@ -103,7 +136,7 @@ class WaterPool:
         self.points = [y_position for _ in range(num_points)]
         self.velocities = [0.0 for _ in range(num_points)]
 
-        # Wave parameters
+        # Wave parameters - tuned for more realistic water behavior
         self.tension = 0.025
         self.dampening = 0.025
         self.spread = 0.25
@@ -153,6 +186,42 @@ class WaterPool:
             points.append((x, y))
         return points
 
+    def get_flattest_position(self, window_size: int = 5) -> float:
+        """Find the x position of the flattest (calmest) section of water.
+
+        Args:
+            window_size: Number of points to consider for flatness calculation
+
+        Returns:
+            x coordinate of the flattest position
+        """
+        if len(self.points) < window_size:
+            return self.width / 2
+
+        min_variance = float('inf')
+        flattest_index = len(self.points) // 2
+
+        # Calculate variance for each window
+        for i in range(window_size // 2, len(self.points) - window_size // 2):
+            # Get window of points around index i
+            window = self.points[max(0, i - window_size // 2):min(len(self.points), i + window_size // 2 + 1)]
+
+            # Calculate variance (how much the surface varies from flat)
+            mean_height = sum(window) / len(window)
+            variance = sum((p - mean_height) ** 2 for p in window) / len(window)
+
+            # Also consider velocity (prefer calmer water)
+            velocity_factor = abs(self.velocities[i]) * 10
+            total_variance = variance + velocity_factor
+
+            if total_variance < min_variance:
+                min_variance = total_variance
+                flattest_index = i
+
+        # Convert index to x coordinate
+        spacing = self.width / (self.num_points - 1)
+        return flattest_index * spacing
+
 
 class PianoWaterVisualizer:
     """Main visualizer class that combines piano input with water physics."""
@@ -171,7 +240,7 @@ class PianoWaterVisualizer:
         self.drops: List[WaterDrop] = []
         self.ripples: List[Ripple] = []
         self.splashes: List[Splash] = []
-        self.water_pool = WaterPool(width, int(height * 0.75), num_points=150)
+        self.water_pool = WaterPool(width, int(height * 0.75), num_points=300)  # More detailed water surface
 
         # Visual settings
         self.background_color = (10, 15, 30)  # Dark blue background
@@ -230,14 +299,20 @@ class PianoWaterVisualizer:
         audio_data = note_data.get('audio_data', None)
         duration = note_data.get('duration', 0.5)
 
-        # Random x position with slight variation
-        x = random.uniform(self.width * 0.2, self.width * 0.8)
+        # Find the flattest (calmest) position on the water surface
+        flattest_x = self.water_pool.get_flattest_position()
+
+        # Add slight random variation around the flattest position
+        x = flattest_x + random.uniform(-20, 20)
+        # Keep within bounds
+        x = max(50, min(self.width - 50, x))
 
         # Drop starts from top with slight randomness
         y = random.uniform(-50, 50)
 
-        # Initial velocity (slightly random)
-        vx = random.uniform(-30, 30)
+        # Initial velocity - aim towards the target x position with slight randomness
+        target_vx = (flattest_x - x) * 0.5  # Gentle correction towards flattest spot
+        vx = target_vx + random.uniform(-10, 10)
         vy = random.uniform(50, 150)
 
         # Size based on velocity (volume)
@@ -282,24 +357,31 @@ class PianoWaterVisualizer:
                 size=size,
                 color=color,
                 lifetime=0.0,
-                max_lifetime=random.uniform(0.3, 0.8)
+                max_lifetime=random.uniform(0.3, 0.8),
+                rotation=random.uniform(0, 2 * math.pi),
+                rotation_speed=random.uniform(-5, 5)
             )
             self.splashes.append(splash)
 
     def create_ripple(self, x: float, y: float, color: Tuple[int, int, int], intensity: float = 1.0):
         """Create ripple effect at impact point."""
-        max_radius = 50 + intensity * 100
+        # Create multiple ripples for more detailed effect
+        num_ripples = 2 + int(intensity * 2)
 
-        ripple = Ripple(
-            x=x, y=y,
-            radius=0,
-            max_radius=max_radius,
-            lifetime=0.0,
-            max_lifetime=1.5,
-            color=color,
-            alpha=255
-        )
-        self.ripples.append(ripple)
+        for i in range(num_ripples):
+            max_radius = (50 + intensity * 100) * (0.7 + i * 0.3)
+            delay = i * 0.1
+
+            ripple = Ripple(
+                x=x, y=y,
+                radius=0,
+                max_radius=max_radius,
+                lifetime=-delay,  # Delayed start
+                max_lifetime=1.5 + i * 0.3,
+                color=color,
+                alpha=255
+            )
+            self.ripples.append(ripple)
 
     def update(self, dt: float):
         """Update all physics objects."""
@@ -335,7 +417,9 @@ class PianoWaterVisualizer:
 
                 # Remove drop
                 self.drops.remove(drop)
-            elif not drop.is_alive():
+            elif not drop.is_alive() or drop.x < -50 or drop.x > self.width + 50:
+                # Only remove drops that expire AND are off-screen (safety check)
+                # or have gone off-screen horizontally
                 self.drops.remove(drop)
 
         # Update splashes
@@ -373,7 +457,7 @@ class PianoWaterVisualizer:
         # Draw water pool
         surface_points = self.water_pool.get_surface_points()
         if len(surface_points) > 2:
-            # Draw filled water
+            # Draw filled water with gradient effect
             bottom_points = [
                 (self.width, self.height),
                 (0, self.height)
@@ -381,17 +465,63 @@ class PianoWaterVisualizer:
             all_points = surface_points + bottom_points
             pygame.draw.polygon(self.screen, self.water_color, all_points)
 
-            # Draw water surface line (lighter blue)
+            # Draw deeper water gradient (darker at bottom)
+            deep_water_color = (20, 60, 120)
+            gradient_y = self.water_pool.y_position + 50
+            if gradient_y < self.height:
+                gradient_points = [(0, gradient_y), (self.width, gradient_y),
+                                  (self.width, self.height), (0, self.height)]
+                gradient_surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+                pygame.draw.polygon(gradient_surface, (*deep_water_color, 128), gradient_points)
+                self.screen.blit(gradient_surface, (0, 0))
+
+            # Draw water surface line (lighter blue with slight glow)
             pygame.draw.lines(
                 self.screen,
-                (50, 150, 220),
+                (80, 180, 240),
                 False,
                 surface_points,
-                3
+                4
+            )
+            # Add subtle highlight line
+            pygame.draw.lines(
+                self.screen,
+                (120, 200, 255),
+                False,
+                surface_points,
+                2
             )
 
         # Draw water drops
         for drop in self.drops:
+            # Motion trail effect
+            trail_length = 3
+            for i in range(trail_length):
+                trail_factor = (i + 1) / trail_length
+                trail_x = drop.x - drop.vx * 0.01 * trail_factor
+                trail_y = drop.y - drop.vy * 0.01 * trail_factor
+                trail_radius = drop.radius * (1 - trail_factor * 0.3)
+                trail_alpha = int(150 * (1 - trail_factor))
+
+                trail_surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+                pygame.draw.circle(
+                    trail_surface,
+                    (*drop.color, trail_alpha),
+                    (int(trail_x), int(trail_y)),
+                    int(trail_radius)
+                )
+                self.screen.blit(trail_surface, (0, 0))
+
+            # Shadow/outline for depth
+            shadow_offset = 2
+            pygame.draw.circle(
+                self.screen,
+                (0, 0, 0),
+                (int(drop.x + shadow_offset), int(drop.y + shadow_offset)),
+                int(drop.radius),
+                1
+            )
+
             # Main drop
             pygame.draw.circle(
                 self.screen,
@@ -400,15 +530,23 @@ class PianoWaterVisualizer:
                 int(drop.radius)
             )
 
-            # Highlight for 3D effect
+            # Multiple highlights for more realistic 3D effect
             highlight_offset = drop.radius * 0.3
+            # Main highlight
             pygame.draw.circle(
                 self.screen,
-                (min(255, drop.color[0] + 80),
-                 min(255, drop.color[1] + 80),
-                 min(255, drop.color[2] + 80)),
+                (min(255, drop.color[0] + 100),
+                 min(255, drop.color[1] + 100),
+                 min(255, drop.color[2] + 100)),
                 (int(drop.x - highlight_offset), int(drop.y - highlight_offset)),
                 int(drop.radius * 0.4)
+            )
+            # Secondary smaller highlight
+            pygame.draw.circle(
+                self.screen,
+                (255, 255, 255),
+                (int(drop.x - highlight_offset * 0.5), int(drop.y - highlight_offset * 0.5)),
+                int(drop.radius * 0.15)
             )
 
         # Draw splash particles
@@ -416,12 +554,33 @@ class PianoWaterVisualizer:
             alpha = int(255 * (1 - splash.lifetime / splash.max_lifetime))
             if alpha > 0:
                 splash_surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
-                pygame.draw.circle(
-                    splash_surface,
-                    (*splash.color, alpha),
-                    (int(splash.x), int(splash.y)),
-                    int(splash.size)
-                )
+
+                # Draw elongated particles based on rotation for more realistic look
+                size = int(splash.size)
+                if size > 1:
+                    # Draw as small ellipse/streak
+                    points = []
+                    for angle_offset in [0, math.pi/2, math.pi, 3*math.pi/2]:
+                        angle = splash.rotation + angle_offset
+                        if angle_offset == 0 or angle_offset == math.pi:
+                            radius = size * 1.2  # Elongated
+                        else:
+                            radius = size * 0.8
+                        points.append((
+                            int(splash.x + math.cos(angle) * radius),
+                            int(splash.y + math.sin(angle) * radius)
+                        ))
+                    if len(points) >= 3:
+                        pygame.draw.polygon(splash_surface, (*splash.color, alpha), points)
+                else:
+                    # Small particles as circles
+                    pygame.draw.circle(
+                        splash_surface,
+                        (*splash.color, alpha),
+                        (int(splash.x), int(splash.y)),
+                        max(1, size)
+                    )
+
                 self.screen.blit(splash_surface, (0, 0))
 
         # Draw UI info

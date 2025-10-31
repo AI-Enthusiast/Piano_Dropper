@@ -59,25 +59,33 @@ def run_piano_with_visualizer(song_file: str = "sample_song.json"):
     def send_notes():
         time.sleep(0.5)  # Give visualizer time to initialize
 
-        for i, note in enumerate(notes, 1):
-            if not visualizer.running:
-                break
+        start_time = time.time()
+        note_index = 0
 
-            # Display note info
-            print(f"Note {i}/{len(notes)}: {note.name} ({note.frequency:.2f} Hz) - "
-                  f"Duration: {note.duration}s, Velocity: {note.velocity:.2f}")
+        while note_index < len(notes) and visualizer.running:
+            current_time = time.time() - start_time
 
-            # Generate audio wave but don't play it yet
-            try:
-                audio_wave = piano.play_note(note, send_to_visualizer=False)
-                # Send note to visualizer WITH audio data - it will play when drop hits water
-                visualizer.add_note(note.name, note.frequency, note.duration, note.velocity, audio_wave)
-            except Exception as e:
-                print(f"  (Audio generation error: {e})")
-                visualizer.add_note(note.name, note.frequency, note.duration, note.velocity)
+            # Send all notes that should start at or before current time
+            while note_index < len(notes) and notes[note_index].timestamp <= current_time:
+                note = notes[note_index]
 
-            # Wait for note duration (but audio plays on drop impact, not now!)
-            time.sleep(note.duration)
+                # Display note info
+                print(f"Note {note_index + 1}/{len(notes)}: {note.name} ({note.frequency:.2f} Hz) - "
+                      f"Duration: {note.duration}s, Velocity: {note.velocity:.2f}, Timestamp: {note.timestamp:.2f}s")
+
+                # Generate audio wave but don't play it yet
+                try:
+                    audio_wave = piano.play_note(note, send_to_visualizer=False)
+                    # Send note to visualizer WITH audio data - it will play when drop hits water
+                    visualizer.add_note(note.name, note.frequency, note.duration, note.velocity, audio_wave)
+                except Exception as e:
+                    print(f"  (Audio generation error: {e})")
+                    visualizer.add_note(note.name, note.frequency, note.duration, note.velocity)
+
+                note_index += 1
+
+            # Small sleep to prevent busy waiting
+            time.sleep(0.01)
 
         # Keep visualizer running after song ends
         print("\nSong complete! Visualizer will continue for 5 more seconds...")

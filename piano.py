@@ -17,6 +17,7 @@ class Note:
     frequency: float
     duration: float  # in seconds
     velocity: float = 1.0  # intensity/volume (0.0 to 1.0)
+    timestamp: float = 0.0  # time in seconds when note should start playing
 
 
 class Piano:
@@ -165,46 +166,92 @@ class Piano:
     def parse_sheet_music(self, sheet_music_file: str) -> List[Note]:
         """
         Parse a sheet music file and return a list of Notes.
-        Expected format: JSON file with list of notes.
-        Example:
-        [
-            {"name": "C4", "duration": 0.5, "velocity": 0.8},
-            {"name": "E4", "duration": 0.5, "velocity": 0.8},
-            {"name": "G4", "duration": 1.0, "velocity": 0.9}
-        ]
+        Supports two formats:
+        1. Sequential format (old): Each note plays after the previous one ends
+           [{"name": "C4", "duration": 0.5, "velocity": 0.8}, ...]
+        2. Timestamped format (new): Notes can overlap/play simultaneously
+           [{"name": "C4", "duration": 0.5, "velocity": 0.8, "timestamp": 0.0}, ...]
+
+        If no timestamps are provided, they will be calculated sequentially.
         """
         with open(sheet_music_file, 'r') as f:
             data = json.load(f)
 
         notes = []
-        for note_data in data:
-            note = Note(
-                name=note_data['name'],
-                frequency=self.get_frequency(note_data['name']),
-                duration=note_data.get('duration', 0.5),
-                velocity=note_data.get('velocity', 1.0)
-            )
-            notes.append(note)
+        current_time = 0.0
+        has_timestamps = any('timestamp' in note_data for note_data in data)
 
+        for note_data in data:
+            # Handle both single notes and chords (list of note names)
+            note_names = note_data.get('name')
+            if isinstance(note_names, str):
+                note_names = [note_names]
+            elif not isinstance(note_names, list):
+                note_names = [note_names]
+
+            duration = note_data.get('duration', 0.5)
+            velocity = note_data.get('velocity', 1.0)
+
+            # Get timestamp - either from data or calculate sequentially
+            if has_timestamps:
+                timestamp = note_data.get('timestamp', current_time)
+            else:
+                timestamp = current_time
+                current_time += duration
+
+            # Create a note for each note name (supports chords)
+            for note_name in note_names:
+                note = Note(
+                    name=note_name,
+                    frequency=self.get_frequency(note_name),
+                    duration=duration,
+                    velocity=velocity,
+                    timestamp=timestamp
+                )
+                notes.append(note)
+
+        # Sort notes by timestamp
+        notes.sort(key=lambda n: n.timestamp)
         return notes
 
     def play_song(self, notes: List[Note], send_to_visualizer=True) -> np.ndarray:
         """
-        Play a sequence of notes (a song).
+        Play a sequence of notes (a song) with polyphonic support.
+        Notes are mixed based on their timestamps, allowing simultaneous playback.
         Returns the combined audio wave.
         """
-        waves = []
+        if not notes:
+            return np.array([])
 
+        # Calculate total duration of the song
+        max_end_time = max(note.timestamp + note.duration for note in notes)
+        total_samples = int(self.sample_rate * max_end_time)
+
+        # Create empty audio buffer
+        combined_wave = np.zeros(total_samples)
+
+        # Generate and mix each note at its timestamp
         for note in notes:
             wave = self.play_note(note, send_to_visualizer)
-            waves.append(wave)
 
-        # Concatenate all waves
-        if waves:
-            combined_wave = np.concatenate(waves)
-            return combined_wave
-        else:
-            return np.array([])
+            # Calculate starting position in samples
+            start_sample = int(note.timestamp * self.sample_rate)
+            end_sample = start_sample + len(wave)
+
+            # Mix the note into the combined wave
+            if end_sample <= total_samples:
+                combined_wave[start_sample:end_sample] += wave
+            else:
+                # Truncate if necessary
+                available_samples = total_samples - start_sample
+                combined_wave[start_sample:] += wave[:available_samples]
+
+        # Normalize to prevent clipping
+        max_amplitude = np.max(np.abs(combined_wave))
+        if max_amplitude > 1.0:
+            combined_wave = combined_wave / max_amplitude
+
+        return combined_wave
 
     def create_chord(self, note_names: List[str], duration: float, velocity: float = 1.0) -> np.ndarray:
         """

@@ -1,0 +1,52 @@
+[
+  {"name": "E5", "duration": 0.25, "velocity": 0.7, "timestamp": 0.0},
+  {"name": "D#5", "duration": 0.25, "velocity": 0.7, "timestamp": 0.25},
+  {"name": "E5", "duration": 0.25, "velocity": 0.7, "timestamp": 0.5},
+  {"name": "D#5", "duration": 0.25, "velocity": 0.7, "timestamp": 0.75},
+  {"name": "E5", "duration": 0.25, "velocity": 0.7, "timestamp": 1.0},
+  {"name": "B4", "duration": 0.25, "velocity": 0.7, "timestamp": 1.25},
+  {"name": "D5", "duration": 0.25, "velocity": 0.7, "timestamp": 1.5},
+  {"name": "C5", "duration": 0.25, "velocity": 0.7, "timestamp": 1.75},
+  {"name": "A4", "duration": 0.5, "velocity": 0.75, "timestamp": 2.0},
+
+  {"name": ["A2", "E3"], "duration": 0.5, "velocity": 0.5, "timestamp": 2.0, "comment": "Left hand bass"},
+  {"name": "E3", "duration": 0.25, "velocity": 0.4, "timestamp": 2.5},
+  {"name": "A3", "duration": 0.25, "velocity": 0.4, "timestamp": 2.75},
+
+  {"name": "B4", "duration": 0.5, "velocity": 0.75, "timestamp": 3.0},
+
+  {"name": ["E2", "E3"], "duration": 0.5, "velocity": 0.5, "timestamp": 3.0, "comment": "Left hand bass"},
+  {"name": "E3", "duration": 0.25, "velocity": 0.4, "timestamp": 3.5},
+  {"name": "G#3", "duration": 0.25, "velocity": 0.4, "timestamp": 3.75},
+
+  {"name": "C5", "duration": 0.5, "velocity": 0.75, "timestamp": 4.0},
+
+  {"name": ["A2", "E3"], "duration": 0.75, "velocity": 0.5, "timestamp": 4.0, "comment": "Left hand bass"},
+
+  {"name": "E5", "duration": 0.25, "velocity": 0.7, "timestamp": 4.75},
+  {"name": "D#5", "duration": 0.25, "velocity": 0.7, "timestamp": 5.0},
+  {"name": "E5", "duration": 0.25, "velocity": 0.7, "timestamp": 5.25},
+  {"name": "D#5", "duration": 0.25, "velocity": 0.7, "timestamp": 5.5},
+  {"name": "E5", "duration": 0.25, "velocity": 0.7, "timestamp": 5.75},
+  {"name": "B4", "duration": 0.25, "velocity": 0.7, "timestamp": 6.0},
+  {"name": "D5", "duration": 0.25, "velocity": 0.7, "timestamp": 6.25},
+  {"name": "C5", "duration": 0.25, "velocity": 0.7, "timestamp": 6.5},
+  {"name": "A4", "duration": 0.5, "velocity": 0.75, "timestamp": 6.75},
+
+  {"name": ["A2", "E3"], "duration": 0.5, "velocity": 0.5, "timestamp": 6.75, "comment": "Left hand bass"},
+  {"name": "E3", "duration": 0.25, "velocity": 0.4, "timestamp": 7.25},
+  {"name": "A3", "duration": 0.25, "velocity": 0.4, "timestamp": 7.5},
+
+  {"name": "B4", "duration": 0.5, "velocity": 0.75, "timestamp": 7.75},
+
+  {"name": ["E2", "E3"], "duration": 0.5, "velocity": 0.5, "timestamp": 7.75, "comment": "Left hand bass"},
+  {"name": "E3", "duration": 0.25, "velocity": 0.4, "timestamp": 8.25},
+  {"name": "C4", "duration": 0.25, "velocity": 0.4, "timestamp": 8.5},
+
+  {"name": "C5", "duration": 0.25, "velocity": 0.7, "timestamp": 8.75},
+  {"name": "B4", "duration": 0.25, "velocity": 0.7, "timestamp": 9.0},
+  {"name": "A4", "duration": 0.75, "velocity": 0.8, "timestamp": 9.25},
+
+  {"name": ["A2", "E3"], "duration": 1.0, "velocity": 0.5, "timestamp": 9.25, "comment": "Left hand bass - final"}
+]
+
